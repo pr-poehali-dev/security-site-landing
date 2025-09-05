@@ -2,13 +2,58 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Icon from "@/components/ui/icon";
+import { useState, useEffect } from "react";
 
 const Index = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'bot', content: 'Здравствуйте! Я помогу с вопросами по системам безопасности. Что вас интересует?' }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+    
+    const userMessage = { role: 'user', content: inputMessage };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Простой ИИ-ответ
+    setTimeout(() => {
+      let botResponse = "Спасибо за вопрос! ";
+      
+      if (inputMessage.toLowerCase().includes('цена') || inputMessage.toLowerCase().includes('стоимость')) {
+        botResponse += "Стоимость зависит от площади объекта. Наши тарифы: Малый (до 100м²) - от 5000₽, Средний (100-500м²) - от 15000₽, Большой (500-1000м²) - от 30000₽. Хотите получить точный расчет?";
+      } else if (inputMessage.toLowerCase().includes('видеонаблюдение') || inputMessage.toLowerCase().includes('камера')) {
+        botResponse += "Устанавливаем современные IP-камеры с высоким разрешением. Возможности: ночная съемка, удаленный доступ через приложение, запись на облако. Количество камер рассчитывается индивидуально.";
+      } else if (inputMessage.toLowerCase().includes('сигнализация') || inputMessage.toLowerCase().includes('охрана')) {
+        botResponse += "Охранно-пожарная сигнализация включает датчики движения, дыма, вскрытия. Подключаем к пульту охраны и мобильному приложению. Реагирование в течение 5 минут.";
+      } else if (inputMessage.toLowerCase().includes('доступ') || inputMessage.toLowerCase().includes('домофон')) {
+        botResponse += "Системы контроля доступа: электронные замки, карты доступа, биометрия, видеодомофоны. Настройка прав доступа по времени и зонам.";
+      } else {
+        botResponse += "Я готов ответить на вопросы о наших услугах: видеонаблюдение, сигнализация, контроль доступа. Или оставьте заявку, и специалист свяжется с вами!";
+      }
+      
+      setMessages(prev => [...prev, { role: 'bot', content: botResponse }]);
+    }, 1000);
+    
+    setInputMessage('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-security-gray-50 to-security-blue-50">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -245,6 +290,16 @@ const Index = () => {
                   <div>
                     <h3 className="font-semibold text-security-gray-900 mb-1">Адрес</h3>
                     <p className="text-security-gray-600">г. Екатеринбург, ул. Первомайская, д. 77</p>
+                    <div className="mt-4 h-48 bg-security-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-security-blue-100 to-security-gray-100 flex items-center justify-center">
+                        <div className="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl text-center shadow-lg">
+                          <Icon name="MapPin" className="text-security-blue mx-auto mb-2" size={32} />
+                          <p className="text-lg font-semibold text-security-gray-900">г. Екатеринбург</p>
+                          <p className="text-sm text-security-gray-600">ул. Первомайская, 77</p>
+                          <p className="text-xs text-security-gray-500 mt-2">Интерактивная карта</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
@@ -304,6 +359,61 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* AI Chatbot */}
+      <Dialog open={chatOpen} onOpenChange={setChatOpen}>
+        <DialogTrigger asChild>
+          <Button
+            className={`fixed bottom-6 right-6 w-14 h-14 rounded-full bg-security-blue hover:bg-security-blue-600 shadow-lg transition-all duration-300 ${
+              isScrolled ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'
+            }`}
+            size="sm"
+          >
+            <Icon name="MessageCircle" className="text-white" size={24} />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-security-blue rounded-full flex items-center justify-center">
+                <Icon name="Bot" className="text-white" size={16} />
+              </div>
+              <span>ИИ-консультант</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="max-h-64 overflow-y-auto space-y-2 p-2 bg-security-gray-50 rounded-lg">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-xs p-2 rounded-lg text-sm ${
+                      message.role === 'user'
+                        ? 'bg-security-blue text-white'
+                        : 'bg-white border text-security-gray-800'
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex space-x-2">
+              <Input
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder="Задайте вопрос..."
+                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              />
+              <Button onClick={handleSendMessage} size="sm">
+                <Icon name="Send" size={16} />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <footer className="bg-security-gray-900 text-white py-12">
